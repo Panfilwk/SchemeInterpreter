@@ -3,23 +3,28 @@
 (define top-level-eval
   (lambda (form)
     ; later we may add things that are not expressions.
-    (eval-exp form)))
+    (eval-exp form
+      (empty-env))))
 
 ; eval-exp is the main component of the interpreter
 
 (define eval-exp
-  (lambda (exp)
+  (lambda (exp env)
     (cases expression exp
       [lit-exp (datum) (if (pair? datum) (cadr datum) datum)]
       [var-exp (id)
-				(apply-env init-env id; look up its value.
-      	   (lambda (x) x) ; procedure to call if id is in the environment 
-           (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
-		          "variable not found in environment: ~s"
-			   id)))] 
+        (apply-env env id; look up its value.
+           (lambda (x) x) ; procedure to call if id is in the environment
+           (lambda ()
+              (apply-env global-env
+                id
+                identity-proc
+                (lambda ()))  
+                  (eopl:error 'apply-env "variable not found in environment: ~s"
+                    id)))] 
       [app-exp (rator rands)
-        (let ([proc-value (eval-exp rator)]
-              [args (eval-rands rands)])
+        (let ([proc-value (eval-exp rator env)]
+              [args (eval-rands rands env)])
           (apply-proc proc-value args))]
       [if-exp (test then other)
         (if (eval-exp test) (eval-exp then) (eval-exp other))]
@@ -28,8 +33,8 @@
 ; evaluate the list of operands, putting results into a list
 
 (define eval-rands
-  (lambda (rands)
-    (map eval-exp rands)))
+  (lambda (rands env)
+    (map (lambda (e) (eval-exp e env)) rands)))
 
 ;  Apply a procedure to its arguments.
 ;  At this point, we only have primitive procedures.  
