@@ -49,7 +49,7 @@
 (define (lit-format? datum)
 (ormap 
        (lambda (pred) (pred datum))
-       (list number? vector? boolean? symbol? string? pair? null?)))
+       (list number? vector? boolean? symbol? string? (lambda (x) (and (pair? x) (eq? (car x) 'quote))) null?)))
 
 (define (lambda-format? datum)
     (and

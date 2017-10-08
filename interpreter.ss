@@ -10,7 +10,7 @@
 (define eval-exp
   (lambda (exp)
     (cases expression exp
-      [lit-exp (datum) datum]
+      [lit-exp (datum) (if (pair? datum) (cadr datum) datum)]
       [var-exp (id)
 				(apply-env init-env id; look up its value.
       	   (lambda (x) x) ; procedure to call if id is in the environment 
@@ -21,6 +21,8 @@
         (let ([proc-value (eval-exp rator)]
               [args (eval-rands rands)])
           (apply-proc proc-value args))]
+      [if-exp (test then other)
+        (if (eval-exp test) (eval-exp then) (eval-exp other))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 ; evaluate the list of operands, putting results into a list
@@ -42,7 +44,8 @@
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
 
-(define *prim-proc-names* '(+ - * add1 sub1 cons =))
+(define *prim-proc-names* '(+ - * / add1 sub1 cons list car cdr cadr cddr 
+  null? eq? equal? atom? list? pair? procedure? vector? number? symbol? =))
 
 (define init-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -60,9 +63,25 @@
       [(+) (+ (1st args) (2nd args))]
       [(-) (- (1st args) (2nd args))]
       [(*) (* (1st args) (2nd args))]
+      [(/) (/ (1st args) (2nd args))]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
       [(cons) (cons (1st args) (2nd args))]
+      [(list) (apply list args)]
+      [(car) (car (1st args))]
+      [(cdr) (cdr (1st args))]
+      [(cadr) (cadr (1st args))]
+      [(cddr) (cddr (1st args))]
+      [(procedure?) (procedure? (1st args))]
+      [(pair?) (pair? (1st args))]
+      [(symbol?) (symbol? (1st args))]
+      [(vector?) (vector? (1st args))]
+      [(list?) (list? (1st args))]
+      [(null?) (null? (1st args))]
+      [(eq?) (eq? (1st args) (2nd args))]
+      [(equal?) (equal? (1st args) (2nd args))]
+      [(atom?) (atom? (1st args))]
+      [(number?) (number? (1st args))]
       [(=) (= (1st args) (2nd args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 

@@ -32,16 +32,13 @@
   [app-exp
    (rator expression?)
    (rands (list-of expression?))])
-	
+
 ; datatype for procedures.  At first there is only one
 ; kind of procedure, but more kinds will be added later.
 
 (define-datatype proc-val proc-val?
   [prim-proc
    (name symbol?)])
-	 
-	 
-	 
 	
 ;; environment type definitions
 
