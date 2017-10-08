@@ -3,6 +3,7 @@
 ; You will want to replace this with your parser that includes more expression types, more options for these types, and error-checking.
 
 ; Procedures to make the parser a little bit saner.
+
 (define 1st car)
 (define 2nd cadr)
 (define 3rd caddr)
@@ -14,7 +15,7 @@
   (lambda (datum)
     (cond
      [(symbol? datum)(var-exp datum)]
-     [(number? datum) (lit-exp datum)]
+     [(lit-format? datum) (lit-exp datum)]
      [(pair? datum)
       (cond
           [(eqv? (1st datum) 'if) (parse-if datum)]
@@ -44,6 +45,11 @@
                (app-exp (parse-exp (1st datum)) (map parse-exp (rest datum)))
                (eopl:error 'parse-exp "malformed application: ~s" datum))])]
      [else (eopl:error 'parse-exp "bad expression: ~s" datum)])))
+
+(define (lit-format? datum)
+(ormap 
+       (lambda (pred) (pred datum))
+       (list number? vector? boolean? symbol? string? pair? null?)))
 
 (define (lambda-format? datum)
     (and

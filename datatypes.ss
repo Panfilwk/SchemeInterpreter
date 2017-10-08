@@ -2,19 +2,36 @@
 ;; Parsed expression datatypes
 
 (define-datatype expression expression?
-  [var-exp        ; variable references
+  [var-exp
    (id symbol?)]
-  [lit-exp        ; "Normal" data.  Did I leave out any types?
-   (datum
-    (lambda (x)
-      (ormap 
-       (lambda (pred) (pred x))
-       (list number? vector? boolean? symbol? string? pair? null?))))]
-  [app-exp        ; applications
+  [lit-exp
+   (id lit-format?)]
+  [if-exp
+   (test expression?)
+   (then expression?)
+   (other expression?)]
+  [set!-exp
+   (var symbol?)
+   (val expression?)]
+  [lambda-exp
+   (args (list-of symbol?))
+   (vargs (lambda (x) (or (symbol? x) (null? x))))
+   (bodies (list-of expression?))]
+  [let-exp
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (bodies (list-of expression?))]
+  [let*-exp
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (bodies (list-of expression?))]
+  [letrec-exp
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (bodies (list-of expression?))]
+  [app-exp
    (rator expression?)
-   (rands (list-of expression?))]  
-  )
-
+   (rands (list-of expression?))])
 	
 ; datatype for procedures.  At first there is only one
 ; kind of procedure, but more kinds will be added later.
