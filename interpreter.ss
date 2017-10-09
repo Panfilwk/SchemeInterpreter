@@ -28,6 +28,8 @@
           (apply-proc proc-value args))]
       [if-exp (test then other)
         (if (eval-exp test env) (eval-exp then env) (eval-exp other env))]
+      [let-exp (vars vals bodies)
+        (eval-bodies bodies (extend-env vars (eval-rands vals env) env))]
       [lambda-exp (args vargs bodies)
         (lambda-proc args bodies env)]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
@@ -40,6 +42,13 @@
   (lambda (rands env)
     (map (lambda (e) (eval-exp e env)) rands)))
 
+; evaluate the bodies of a let or lambda, returning the last result
+
+(define (eval-bodies bodies env)
+  (if (null? (cdr bodies))
+    (eval-exp (car bodies) env)
+    (begin (eval-exp (car bodies) env) (eval-bodies (cdr bodies) env))))
+
 ;  Apply a procedure to its arguments.
 ;  At this point, we only have primitive procedures.  
 ;  User-defined procedures will be added later.
@@ -48,7 +57,8 @@
   (lambda (proc-value args)
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args)]
-			; You will add other cases
+      [lambda-proc (vars bodies env)
+        (eval-bodies bodies (extend-env vars args env))]
       [else (error 'apply-proc
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
