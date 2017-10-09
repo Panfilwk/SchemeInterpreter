@@ -14,21 +14,25 @@
       [lit-exp (datum) (if (pair? datum) (cadr datum) datum)]
       [var-exp (id)
         (apply-env env id; look up its value.
-           (lambda (x) x) ; procedure to call if id is in the environment
+           identity-proc
            (lambda ()
               (apply-env global-env
                 id
                 identity-proc
-                (lambda ()))  
+                (lambda ()
                   (eopl:error 'apply-env "variable not found in environment: ~s"
-                    id)))] 
+                    id)))))] 
       [app-exp (rator rands)
         (let ([proc-value (eval-exp rator env)]
               [args (eval-rands rands env)])
           (apply-proc proc-value args))]
       [if-exp (test then other)
-        (if (eval-exp test) (eval-exp then) (eval-exp other))]
+        (if (eval-exp test env) (eval-exp then env) (eval-exp other env))]
+      [lambda-exp (args vargs bodies)
+        (lambda-proc args bodies env)]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
+
+(define (identity-proc x) x)
 
 ; evaluate the list of operands, putting results into a list
 
@@ -49,10 +53,11 @@
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
 
-(define *prim-proc-names* '(+ - * / add1 sub1 cons list car cdr cadr cddr 
-  null? eq? equal? atom? list? pair? procedure? vector? number? symbol? =))
+(define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar
+  not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >=
+  list->vector vector->list make-vector vector-ref set-car! set-cdr! vector-set!))
 
-(define init-env         ; for now, our initial global environment only contains 
+(define global-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
      *prim-proc-names*   ;  a value (not an expression) with an identifier.
      (map prim-proc      
@@ -65,19 +70,25 @@
 (define apply-prim-proc
   (lambda (prim-proc args)
     (case prim-proc
-      [(+) (+ (1st args) (2nd args))]
-      [(-) (- (1st args) (2nd args))]
-      [(*) (* (1st args) (2nd args))]
+      [(+) (apply + args)]
+      [(-) (apply - args)]
+      [(*) (apply * args)]
       [(/) (/ (1st args) (2nd args))]
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
+      [(zero?) (zero? (1st args))]
       [(cons) (cons (1st args) (2nd args))]
       [(list) (apply list args)]
+      [(length) (length (1st args))]
       [(car) (car (1st args))]
       [(cdr) (cdr (1st args))]
       [(cadr) (cadr (1st args))]
       [(cddr) (cddr (1st args))]
-      [(procedure?) (procedure? (1st args))]
+      [(cdar) (cdar (1st args))]
+      [(caar) (caar (1st args))]
+      [(cadar) (cadar (1st args))]
+      [(not) (not (1st args))]
+      [(procedure?) (proc-val? (1st args))]
       [(pair?) (pair? (1st args))]
       [(symbol?) (symbol? (1st args))]
       [(vector?) (vector? (1st args))]
@@ -88,6 +99,18 @@
       [(atom?) (atom? (1st args))]
       [(number?) (number? (1st args))]
       [(=) (= (1st args) (2nd args))]
+      [(<) (< (1st args) (2nd args))]
+      [(<=) (<= (1st args) (2nd args))]
+      [(>) (> (1st args) (2nd args))]
+      [(>=) (>= (1st args) (2nd args))]
+      [(vector->list) (vector->list (1st args))]
+      [(list->vector) (list->vector (1st args))]
+      [(list->vector) (list->vector (1st args))]
+      [(make-vector) (apply make-vector args)]
+      [(vector-ref) (vector-ref (1st args) (2nd args))]
+      [(set-car!) (set-car! (1st args) (2nd args))]
+      [(set-cdr!) (set-cdr! (1st args) (2nd args))]
+      [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))

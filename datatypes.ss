@@ -38,7 +38,11 @@
 
 (define-datatype proc-val proc-val?
   [prim-proc
-   (name symbol?)])
+   (name symbol?)]
+  [lambda-proc
+   (args (list-of symbol?))
+   (bodies (list-of expression?))
+   (env environment?)])
 	
 ;; environment type definitions
 
