@@ -31,7 +31,9 @@
       [let-exp (vars vals bodies)
         (eval-bodies bodies (extend-env vars (eval-rands vals env) env))]
       [lambda-exp (args vargs bodies)
-        (lambda-proc args bodies env)]
+        (if (null? vargs)
+          (lambda-proc args bodies env)
+          (var-lambda-proc (cons vargs args) bodies env))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 (define (identity-proc x) x)
@@ -58,14 +60,25 @@
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args)]
       [lambda-proc (vars bodies env)
-        (eval-bodies bodies (extend-env vars args env))]
+        (if (= (length vars) (length args))
+          (eval-bodies bodies (extend-env vars args env))
+          (eopl:error 'apply-proc "Incorrect number of arguments passed to procedure"))]
+      [var-lambda-proc (vars bodies env)
+        (let* ([numargs (- (length vars) 1)]
+               [rest (del-first-n args numargs)])
+          (eval-bodies bodies (extend-env vars (cons rest args) env)))]
       [else (error 'apply-proc
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
 
+(define (del-first-n lst n)
+  (if (zero? n)
+    lst
+    (del-first-n (cdr lst) (- n 1))))
+
 (define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar
   not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >=
-  list->vector vector->list make-vector vector-ref set-car! set-cdr! vector-set!))
+  list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void))
 
 (define global-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -116,11 +129,15 @@
       [(vector->list) (vector->list (1st args))]
       [(list->vector) (list->vector (1st args))]
       [(list->vector) (list->vector (1st args))]
-      [(make-vector) (apply make-vector args)]
+      [(vector) (apply vector args)]
       [(vector-ref) (vector-ref (1st args) (2nd args))]
       [(set-car!) (set-car! (1st args) (2nd args))]
       [(set-cdr!) (set-cdr! (1st args) (2nd args))]
       [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
+      [(apply) (apply-proc (1st args) (2nd args))]
+      [(map) (apply map (lambda x (apply-proc (1st args) x))
+        (rest args))]
+      [(void) (void)]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))
@@ -129,20 +146,10 @@
   (lambda ()
     (display "--> ")
     ;; notice that we don't save changes to the environment...
-    (let ([answer (top-level-eval (parse-exp (read)))])
+    (let ([answer (top-level-eval (syntax-expand (parse-exp (read))))])
       ;; TODO: are there answers that should display differently?
       (eopl:pretty-print answer) (newline)
       (rep))))  ; tail-recursive, so stack doesn't grow.
 
 (define eval-one-exp
-  (lambda (x) (top-level-eval (parse-exp x))))
-
-
-
-
-
-
-
-
-
-
+  (lambda (x) (top-level-eval (syntax-expand (parse-exp x)))))

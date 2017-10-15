@@ -88,7 +88,7 @@
 (define (parse-if datum)
     (let ([length (length datum)])
         (cond
-            [(= length 3) (if-exp (parse-exp (2nd datum)) (parse-exp (3rd datum)) '())]
+            [(= length 3) (if-exp (parse-exp (2nd datum)) (parse-exp (3rd datum)) (parse-exp '(void)))]
             [(= length 4) (if-exp (parse-exp (2nd datum)) (parse-exp (3rd datum)) (parse-exp (4th datum)))]
             [else (eopl:error 'parse-exp "malformed if: ~s" datum)])))
 

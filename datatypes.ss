@@ -54,4 +54,8 @@
   [lambda-proc
    (args (list-of symbol?))
    (bodies (list-of expression?))
+   (env environment?)]
+  [var-lambda-proc
+   (args (list-of symbol?))
+   (bodies (list-of expression?))
    (env environment?)])
