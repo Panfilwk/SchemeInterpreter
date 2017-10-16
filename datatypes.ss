@@ -31,7 +31,14 @@
    (bodies (list-of expression?))]
   [app-exp
    (rator expression?)
-   (rands (list-of expression?))])
+   (rands (list-of expression?))]
+  [while-exp
+   (test expression?)
+   (bodies (list-of expression?))]
+  [case-exp
+   (test expression?)
+   (vals list?)
+   (bodies (list-of expression?))])
 
 ;; environment type definitions
 

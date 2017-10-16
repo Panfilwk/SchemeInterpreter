@@ -34,6 +34,20 @@
         (if (null? vargs)
           (lambda-proc args bodies env)
           (var-lambda-proc (cons vargs args) bodies env))]
+      [while-exp (test bodies)
+        (if (eval-exp test env)
+          (begin
+            (eval-bodies bodies env)
+            (eval-exp exp env)))]
+      [case-exp (test vals bodies)
+        (let ([test-val (eval-exp test env)])
+          (cond
+            [(null? vals) (void)]
+            [(eq? (car vals) 'else) (eval-exp (car bodies) env)]
+            [(member test-val (car vals))
+                (eval-exp (car bodies) env)]
+            [else 
+              (eval-exp (case-exp test (cdr vals) (cdr bodies)) env)]))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 (define (identity-proc x) x)
@@ -78,7 +92,7 @@
 
 (define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar
   not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >=
-  list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void))
+  list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void quotient))
 
 (define global-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -138,6 +152,7 @@
       [(map) (apply map (lambda x (apply-proc (1st args) x))
         (rest args))]
       [(void) (void)]
+      [(quotient) (quotient (1st args) (2nd args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))

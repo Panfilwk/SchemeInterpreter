@@ -40,7 +40,14 @@
            (if (let-format? datum)
                (letrec-exp (map 1st (2nd datum)) (map parse-exp (map 2nd (2nd datum))) (map parse-exp (bods datum)))
                (eopl:error 'parse-exp "malformed letrec: ~s" datum))]
-          [else 
+          [(eqv? (1st datum) 'while)
+           (if (>= (length datum) 3)
+               (while-exp (parse-exp (2nd datum)) (map parse-exp (bods datum)))
+               (eopl:error 'while-exp "bad while format"))]
+          [(eqv? (1st datum) 'case)
+           (if (>= (length datum) 3)
+                (case-exp (parse-exp (2nd datum)) (map 1st (bods datum)) (map parse-exp (map 2nd (bods datum)))))]
+          [else
            (if (app-format? datum)
                (app-exp (parse-exp (1st datum)) (map parse-exp (rest datum)))
                (eopl:error 'parse-exp "malformed application: ~s" datum))])]
