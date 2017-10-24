@@ -98,7 +98,7 @@
 
 (define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar
   not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >=
-  list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void quotient))
+  list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void quotient append eqv? list-tail))
 
 (define global-env         ; for now, our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -159,6 +159,9 @@
         (rest args))]
       [(void) (void)]
       [(quotient) (quotient (1st args) (2nd args))]
+      [(append) (apply append args)]
+      [(eqv?) (eqv? (1st args) (2nd args))]
+      [(list-tail) (apply list-tail args)]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
             prim-op)])))

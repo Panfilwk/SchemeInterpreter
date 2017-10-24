@@ -29,8 +29,11 @@
                     (lambda-exp (car args) (cdr args) (map parse-exp (bods datum))))
                (eopl:error 'parse-exp "malformed lambda: ~s" datum))]
           [(eqv? (1st datum) 'let)
-           (if (let-format? datum)
-               (let-exp (map 1st (2nd datum)) (map parse-exp (map 2nd (2nd datum))) (map parse-exp (bods datum)))
+           (cond
+               [(let-format? datum)
+                    (let-exp (map 1st (2nd datum)) (map parse-exp (map 2nd (2nd datum))) (map parse-exp (bods datum)))]
+               [(named-let-format? datum)
+                    (named-let-exp (2nd datum) (map 1st (3rd datum)) (map parse-exp (map 2nd (3rd datum))) (map parse-exp (cdddr datum)))]
                (eopl:error 'parse-exp "malformed let: ~s" datum))]
           [(eqv? (1st datum) 'let*)
            (if (let-format? datum)
@@ -87,6 +90,18 @@
                 (= (length a) 2)
                 (symbol? (1st a))))
             (2nd datum))))
+
+(define (named-let-format? datum)
+    (and
+        (>= (length datum) 4)
+        (symbol? (2nd datum))
+        (list? (3rd datum))
+        (andmap (lambda (a)
+            (and 
+                (list? a)
+                (= (length a) 2)
+                (symbol? (1st a))))
+            (3rd datum))))
 
 (define (set!-format? datum)
     (and

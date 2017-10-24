@@ -39,13 +39,24 @@
             (case-exp (syntax-expand test) vals (map syntax-expand bodies))]
         [let*-exp (vars vals bodies)
             (if (null? (cdr vars))
-                (let-exp vars vals (map syntax-expand bodies))
+                (let-exp vars (map syntax-expand vals) (map syntax-expand bodies))
                 (let-exp
                     (list (car vars))
                     (list (syntax-expand (car vals)))
                     (list (syntax-expand (let*-exp (cdr vars) (cdr vals) bodies)))))]
         [set!-exp (var val)
             (set!-exp var (syntax-expand val))]
+        [letrec-exp (vars vals bodies)
+            (let-exp
+                vars
+                (make-list (length vals) (lit-exp #f))
+                (append (map set!-exp vars (map syntax-expand vals)) (map syntax-expand bodies)))]
+        [named-let-exp (name vars vals func)
+            (syntax-expand
+                (letrec-exp
+                    (list name)
+                    (list (lambda-exp vars '() func))
+                    (list (app-exp (var-exp name) vals))))]
         [else (eopl:error 'syntax-expand "Bad abstract syntax: ~a" exp)]))
 
 (define (cond-helper conds)

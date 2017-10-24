@@ -29,6 +29,11 @@
    (vars (list-of symbol?))
    (vals (list-of expression?))
    (bodies (list-of expression?))]
+  [named-let-exp
+   (name symbol?)
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (func (list-of expression?))]
   [app-exp
    (rator expression?)
    (rands (list-of expression?))]
