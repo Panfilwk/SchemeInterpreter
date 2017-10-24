@@ -48,6 +48,12 @@
                 (eval-exp (car bodies) env)]
             [else 
               (eval-exp (case-exp test (cdr vals) (cdr bodies)) env)]))]
+      [set!-exp (var val)
+        (set-box!
+          (apply-env-ref env var
+            identity-proc
+            (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))
+          (eval-exp val env))]
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 (define (identity-proc x) x)

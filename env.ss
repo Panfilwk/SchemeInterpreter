@@ -7,7 +7,7 @@
 
 (define extend-env
   (lambda (syms vals env)
-    (extended-env-record syms vals env)))
+    (extended-env-record syms (map box vals) env)))
 
 (define list-find-position
   (lambda (sym los)
@@ -23,7 +23,7 @@
 		 (+ 1 list-index-r)
 		 #f))))))
 
-(define apply-env
+(define apply-env-ref
   (lambda (env sym succeed fail) ; succeed and fail are "callback procedures, 
     (cases environment env       ;  succeed is appluied if sym is found, otherwise 
       [empty-env-record ()       ;  fail is applied.
@@ -32,5 +32,10 @@
 		(let ((pos (list-find-position sym syms)))
       	  (if 	(number? pos)
 				(succeed (list-ref vals pos))
-				(apply-env env sym succeed fail)))])))
+				(apply-env-ref env sym succeed fail)))])))
 
+(define (apply-env env sym succeed fail)
+  (let ([ref (apply-env-ref env sym succeed fail)])
+    (if (box? ref)
+      (unbox ref)
+      ref)))

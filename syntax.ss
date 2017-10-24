@@ -44,6 +44,8 @@
                     (list (car vars))
                     (list (syntax-expand (car vals)))
                     (list (syntax-expand (let*-exp (cdr vars) (cdr vals) bodies)))))]
+        [set!-exp (var val)
+            (set!-exp var (syntax-expand val))]
         [else (eopl:error 'syntax-expand "Bad abstract syntax: ~a" exp)]))
 
 (define (cond-helper conds)
