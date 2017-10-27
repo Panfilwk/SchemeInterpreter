@@ -52,6 +52,8 @@
                     (if (>= (length datum) 3)
                         (case-exp (parse-exp (2nd datum)) (map 1st (bods datum)) (map parse-exp (map 2nd (bods datum))))
                         (eopl:error 'case-exp "bad case format"))]
+                [(eqv? (1st datum) 'begin)
+                    (begin-exp (map parse-exp (rest datum)))]
                 [(eqv? (1st datum) 'define)
                     (if (>= (length datum) 3)
                         (def-exp (2nd datum) (parse-exp (3rd datum)))

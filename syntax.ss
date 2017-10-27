@@ -6,7 +6,6 @@
             (cases expression rator
                 [var-exp (id) 
                     (case id
-                        [(begin) (app-exp (lambda-exp '() '() (map syntax-expand rands)) '())]
                         [(and)
                          (if (null? (cdr rands))
                             (syntax-expand (car rands))
@@ -59,6 +58,8 @@
                     (list (app-exp (var-exp name) vals))))]
         [def-exp (var val)
             (def-exp var (syntax-expand val))]
+        [begin-exp (bodies)
+            (begin-exp (map syntax-expand bodies))]
         [else (eopl:error 'syntax-expand "Bad abstract syntax: ~s" exp)]))
 
 (define (cond-helper tests thens other)

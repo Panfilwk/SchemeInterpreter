@@ -1,4 +1,3 @@
-
 ;; Parsed expression datatypes
 
 (define-datatype expression expression?
@@ -50,13 +49,20 @@
         (other expression?)]
     [def-exp
         (var symbol?)
-        (val expression?)])
+        (val expression?)]
+    [begin-exp
+        (bodies (list-of expression?))])
 
 ;; definition type definitions
 
 (define (definition? exp)
     (cases expression exp
         [def-exp (var val) #t]
+        [else #f]))
+
+(define (begin? exp)
+    (cases expression exp
+        [begin-exp (bodies) #t]
         [else #f]))
 
 ;; environment type definitions
