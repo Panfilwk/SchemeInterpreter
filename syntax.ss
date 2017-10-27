@@ -20,14 +20,14 @@
                                         '(eval)
                                         (list (syntax-expand (car rands)))
                                         (list (if-exp (var-exp 'eval) (var-exp 'eval) (syntax-expand (app-exp (var-exp 'or) (cdr rands))))))])]
-                        [(cond)
-                         (cond-helper rands)]
                         [else (app-exp rator (map syntax-expand rands))])]
                 [else (app-exp rator (map syntax-expand rands))])]
         [if-exp (test then other) (if-exp 
             (syntax-expand test) 
             (syntax-expand then) 
             (syntax-expand other))]
+        [cond-exp (tests thens other)
+            (cond-helper tests thens other)]
         [let-exp (vars vals bodies) (let-exp
             vars (map syntax-expand vals)
             (map syntax-expand bodies))]
@@ -59,22 +59,11 @@
                     (list (app-exp (var-exp name) vals))))]
         [else (eopl:error 'syntax-expand "Bad abstract syntax: ~a" exp)]))
 
-(define (cond-helper conds)
-    (if (null? conds)
-        (parse-exp '(void))
-        (cases expression (car conds)
-            [app-exp (rator rands)
-                (cases expression rator
-                    [var-exp (id)
-                        (if (eq? id 'else)
-                            (car rands)
-                            (if-exp
-                                (syntax-expand rator)
-                                (syntax-expand (car rands))
-                                (cond-helper (cdr conds))))]
-                    [else
-                        (if-exp
-                            (syntax-expand rator)
-                            (syntax-expand (car rands))
-                            (cond-helper (cdr conds)))])]
-            [else (eopl:error 'cond-helper "Bad cond syntax")])))
+(define (cond-helper tests thens other)
+    (cond
+        [(null? tests) other]
+        [else
+            (if-exp
+                (syntax-expand (car tests))
+                (syntax-expand (car thens))
+                (cond-helper (cdr tests) (cdr thens) other))]))
