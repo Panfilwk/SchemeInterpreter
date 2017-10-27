@@ -57,7 +57,9 @@
                     (list name)
                     (list (lambda-exp vars '() func))
                     (list (app-exp (var-exp name) vals))))]
-        [else (eopl:error 'syntax-expand "Bad abstract syntax: ~a" exp)]))
+        [def-exp (var val)
+            (def-exp var (syntax-expand val))]
+        [else (eopl:error 'syntax-expand "Bad abstract syntax: ~s" exp)]))
 
 (define (cond-helper tests thens other)
     (cond

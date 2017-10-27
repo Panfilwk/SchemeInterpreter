@@ -2,9 +2,10 @@
 
 (define top-level-eval
     (lambda (form)
-        ; later we may add things that are not expressions.
-          (eval-exp form
-              (empty-env))))
+        (cond 
+          [(definition? form) (eval-def form)]
+          [(expression? form) (eval-exp form (empty-env))]
+          [else (eopl:error 'top-level-eval "Invalid top-level statement: ~s" form)])))
 
 ; eval-exp is the main component of the interpreter
 
@@ -51,7 +52,9 @@
                 (set-box!
                     (apply-env-ref env var
                         identity-proc
-                        (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))
+                        (lambda () (apply-env-ref global-env var
+                            identity-proc
+                            (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))))
                     (eval-exp val env))]
             [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
@@ -97,12 +100,17 @@
     not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >=
     list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void quotient append eqv? list-tail))
 
-(define global-env         ; for now, our initial global environment only contains 
+(define (make-init-env)         ; for now, our initial global environment only contains 
     (extend-env            ; procedure names.  Recall that an environment associates
         *prim-proc-names*   ;  a value (not an expression) with an identifier.
         (map prim-proc      
               *prim-proc-names*)
         (empty-env)))
+
+(define global-env (make-init-env))
+
+(define (reset-global-env)
+    (set! global-env (make-init-env)))
 
 ; Usually an interpreter must define each 
 ; built-in procedure individually.  We are "cheating" a little bit.
@@ -162,6 +170,13 @@
             [else (error 'apply-prim-proc 
                   "Bad primitive procedure name: ~s" 
                   prim-op)])))
+
+(define (eval-def def)
+    (cases expression def
+        [def-exp (var val) 
+            (set! global-env 
+                (extend-env (list var) (list (eval-exp val (empty-env))) global-env))]
+        [else (eopl:error 'eval-def "bad definition: ~s" def)]))
 
 (define rep      ; "read-eval-print" loop.
     (lambda ()

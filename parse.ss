@@ -50,7 +50,12 @@
                         (eopl:error 'while-exp "bad while format"))]
                 [(eqv? (1st datum) 'case)
                     (if (>= (length datum) 3)
-                            (case-exp (parse-exp (2nd datum)) (map 1st (bods datum)) (map parse-exp (map 2nd (bods datum)))))]
+                        (case-exp (parse-exp (2nd datum)) (map 1st (bods datum)) (map parse-exp (map 2nd (bods datum))))
+                        (eopl:error 'case-exp "bad case format"))]
+                [(eqv? (1st datum) 'define)
+                    (if (>= (length datum) 3)
+                        (def-exp (2nd datum) (parse-exp (3rd datum)))
+                        (eopl:error 'define-exp "bad define format"))]
                 [else
                     (if (app-format? datum)
                         (app-exp (parse-exp (1st datum)) (map parse-exp (rest datum)))

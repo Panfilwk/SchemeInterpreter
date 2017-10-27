@@ -47,7 +47,17 @@
     [cond-exp
         (tests (list-of expression?))
         (thens (list-of expression?))
-        (other expression?)])
+        (other expression?)]
+    [def-exp
+        (var symbol?)
+        (val expression?)])
+
+;; definition type definitions
+
+(define (definition? exp)
+    (cases expression exp
+        [def-exp (var val) #t]
+        [else #f]))
 
 ;; environment type definitions
 
