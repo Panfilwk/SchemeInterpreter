@@ -3,30 +3,40 @@
         [lit-exp (datum) expr]
         [var-exp (id) expr]
         [app-exp (rator rands)
-            (cases expression rator
-                [var-exp (id) 
-                    (case id
-                        [(and)
-                         (if (null? (cdr rands))
-                            (syntax-expand (car rands))
-                            (if-exp (syntax-expand (car rands)) (syntax-expand (app-exp (var-exp 'and) (cdr rands))) (lit-exp #f)))]
-                        [(or)
-                         (cond
-                            [(null? rands) (lit-exp #f)]
-                            [(null? (cdr rands))
-                                (syntax-expand (car rands))]
-                             [else (let-exp
-                                        '(eval)
-                                        (list (syntax-expand (car rands)))
-                                        (list (if-exp (var-exp 'eval) (var-exp 'eval) (syntax-expand (app-exp (var-exp 'or) (cdr rands))))))])]
-                        [else (app-exp rator (map syntax-expand rands))])]
-                [else (app-exp rator (map syntax-expand rands))])]
-        [if-exp (test then other) (if-exp 
-            (syntax-expand test) 
-            (syntax-expand then) 
-            (syntax-expand other))]
+            (app-exp rator (map syntax-expand rands))]
+        [and-exp (bodies)
+            (cond
+                [(null? bodies) (lit-exp #t)]
+                [(null? (cdr bodies))
+                    (syntax-expand (car bodies))]
+                [else
+                    (if-exp
+                        (syntax-expand (car bodies))
+                        (syntax-expand (and-exp (cdr bodies)))
+                        (lit-exp #f))])]
+        [or-exp (bodies)
+            (cond
+                [(null? bodies) (lit-exp #f)]
+                [(null? (cdr bodies))
+                    (syntax-expand (car bodies))]
+                [else
+                    (let-exp
+                        '(eval)
+                        (list (syntax-expand (car bodies)))
+                        (list (if-exp (var-exp 'eval) (var-exp 'eval) (syntax-expand (or-exp (cdr bodies))))))])]
+        [if-exp (test then other)
+            (if-exp 
+                (syntax-expand test) 
+                (syntax-expand then) 
+                (syntax-expand other))]
         [cond-exp (tests thens other)
-            (cond-helper tests thens other)]
+            (cond
+                [(null? tests) other]
+                [else
+                    (if-exp
+                        (syntax-expand (car tests))
+                        (syntax-expand (car thens))
+                        (syntax-expand (cond-exp (cdr tests) (cdr thens) other)))])]
         [let-exp (vars vals bodies) (let-exp
             vars (map syntax-expand vals)
             (map syntax-expand bodies))]

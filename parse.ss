@@ -20,6 +20,10 @@
             (cond
                 [(eqv? (1st datum) 'if) (parse-if datum)]
                 [(eqv? (1st datum) 'cond) (parse-cond datum)]
+                [(eqv? (1st datum) 'and)
+                    (and-exp (map parse-exp (rest datum)))]
+                [(eqv? (1st datum) 'or)
+                    (or-exp (map parse-exp (rest datum)))]
                 [(eqv? (1st datum) 'set!)
                     (if (set!-format? datum)
                         (set!-exp (2nd datum) (parse-exp (3rd datum)))

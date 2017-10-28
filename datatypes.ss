@@ -5,6 +5,10 @@
         (id symbol?)]
     [lit-exp
         (id lit-format?)]
+    [and-exp
+        (bodies (list-of expression?))]
+    [or-exp
+        (bodies (list-of expression?))]
     [if-exp
         (test expression?)
         (then expression?)
