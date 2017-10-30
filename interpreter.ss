@@ -3,13 +3,13 @@
 (define top-level-eval
     (lambda (form)
         (cond 
-          [(definition? form) (eval-def form)]
-          [(begin? form) 
-            (cases expression form
-              [begin-exp (forms) (eval-forms forms)]
-              [else (eopl:error 'top-level-eval "To begin or not to begin, that is the question")])]
-          [(expression? form) (eval-exp form (empty-env))]
-          [else (eopl:error 'top-level-eval "Invalid top-level statement: ~s" form)])))
+            [(definition? form) (eval-def form)]
+            [(begin? form) 
+                (cases expression form
+                    [begin-exp (forms) (eval-forms forms)]
+                    [else (eopl:error 'top-level-eval "To begin or not to begin, that is the question")])]
+            [(expression? form) (eval-exp form (empty-env))]
+            [else (eopl:error 'top-level-eval "Invalid top-level statement: ~s" form)])))
 
 ; eval-exp is the main component of the interpreter
 
@@ -27,8 +27,8 @@
                             (lambda ()
                                 (eopl:error 'apply-env "variable not found in environment: ~s" id)))))] 
             [app-exp (rator rands)
-                (let ([proc-value (eval-exp rator env)]
-                      [args (eval-rands rands env)])
+                (let* ([proc-value (eval-exp rator env)]
+                      [args (eval-lambda-rands rands env proc-value)])
                         (apply-proc proc-value args))]
             [if-exp (test then other)
                 (if (eval-exp test env) (eval-exp then env) (eval-exp other env))]
@@ -71,6 +71,41 @@
 (define eval-rands
     (lambda (rands env)
         (map (lambda (e) (eval-exp e env)) rands)))
+
+(define (eval-lambda-rands rands env procedure)
+    (letrec ([helper
+                (lambda (args rands)
+                    (if (null? args)
+                        '()
+                        (cons
+                            (cases expression (car rands)
+                                [var-exp (rand)
+                                    (cases arg (car args)
+                                        [ref-arg (arg)
+                                            (apply-env-ref env rand ; look up its value.
+                                                identity-proc
+                                                (lambda ()
+                                                    (apply-env-ref global-env
+                                                        rand
+                                                        identity-proc
+                                                        (lambda ()
+                                                            (eopl:error 'eval-lambda-rands "variable not found in environment: ~s" arg)))))]
+                                        [sym-arg (arg)
+                                            (apply-env env rand ; look up its value.
+                                                identity-proc
+                                                (lambda ()
+                                                    (apply-env global-env
+                                                        rand
+                                                        identity-proc
+                                                        (lambda ()
+                                                            (eopl:error 'eval-lambda-rands "variable not found in environment: ~s" arg)))))])]
+                                [else (eval-exp (car rands) env)])
+                            (helper (cdr args) (cdr rands)))))])
+    (cases proc-val procedure
+        [prim-proc (op) (eval-rands rands env)]
+        [lambda-proc (args bodies env) (helper args rands)]
+        [var-lambda-proc (args bodies env) (helper args rands)])))
+
 
 ; evaluate the bodies of a let or lambda, returning the last result
 

@@ -17,8 +17,8 @@
         (var symbol?)
         (val expression?)]
     [lambda-exp
-        (args (list-of symbol?))
-        (vargs (lambda (x) (or (symbol? x) (null? x))))
+        (args (list-of argument?))
+        (vargs (lambda (x) (or (argument? x) (null? x))))
         (bodies (list-of expression?))]
     [let-exp
         (vars (list-of symbol?))
@@ -57,6 +57,8 @@
     [begin-exp
         (bodies (list-of expression?))])
 
+
+
 ;; definition type definitions
 
 (define (definition? exp)
@@ -88,10 +90,16 @@
     [prim-proc
         (name symbol?)]
     [lambda-proc
-        (args (list-of symbol?))
+        (args (list-of argument?))
         (bodies (list-of expression?))
         (env environment?)]
     [var-lambda-proc
-        (args (list-of symbol?))
+        (args (list-of argument?))
         (bodies (list-of expression?))
         (env environment?)])
+
+(define-datatype arg argument?
+    [sym-arg
+        (id symbol?)]
+    [ref-arg
+        (id symbol?)])

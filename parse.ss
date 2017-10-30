@@ -14,7 +14,7 @@
 (define parse-exp         
   (lambda (datum)
     (cond
-        [(symbol? datum)(var-exp datum)]
+        [(symbol? datum) (var-exp datum)]
         [(lit-format? datum) (lit-exp datum)]
         [(pair? datum)
             (cond
@@ -80,8 +80,11 @@
 (define (parse-args arg-lst)
     (if (pair? arg-lst)
         (let ([parsed (parse-args (cdr arg-lst))])
-            (if (or (symbol? (car arg-lst)) (null? (car arg-lst)))
-                (cons (cons (car arg-lst) (car parsed)) (cdr parsed))
+            (cond
+                [(or (symbol? (car arg-lst)) (null? (car arg-lst)))
+                    (cons (cons (sym-arg (car arg-lst)) (car parsed)) (cdr parsed))]
+                [(and (pair? (car arg-lst)) (null? (cddar arg-lst)) (eqv? (caar arg-lst) 'ref))
+                    (cons (cons (ref-arg (cadar arg-lst)) (car parsed)) (cdr parsed))]
                 (eopl:error 'parse-exp "all lambda arguments must be symbols")))
         (if (or (symbol? arg-lst) (null? arg-lst))
             `(() . ,arg-lst)
