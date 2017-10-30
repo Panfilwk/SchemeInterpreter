@@ -36,6 +36,9 @@
 
 (define (apply-env env sym succeed fail)
     (let ([ref (apply-env-ref env sym succeed fail)])
-        (if (box? ref)
-            (unbox ref)
-            ref)))
+        (aggressive-unbox ref)))
+
+(define (aggressive-unbox boxed-var)
+    (if (box? boxed-var)
+        (aggressive-unbox (unbox boxed-var))
+        boxed-var))

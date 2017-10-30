@@ -53,16 +53,22 @@
                         [else 
                             (eval-exp (case-exp test (cdr vals) (cdr bodies)) env)]))]
             [set!-exp (var val)
-                (set-box!
+                (do-set 
                     (apply-env-ref env var
                         identity-proc
                         (lambda () (apply-env-ref global-env var
                             identity-proc
                             (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))))
-                    (eval-exp val env))]
+                    val
+                    env)]
             [begin-exp (bodies)
                 (eval-bodies bodies env)]
             [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
+
+(define (do-set var val env)
+    (if (box? (unbox var))
+        (do-set (unbox var) val env)
+        (set-box! var (eval-exp val env))))
 
 (define (identity-proc x) x)
 
@@ -129,13 +135,21 @@
             [prim-proc (op) (apply-prim-proc op args)]
             [lambda-proc (vars bodies env)
                 (if (= (length vars) (length args))
-                    (eval-bodies bodies (extend-env vars args env))
+                    (eval-bodies bodies (extend-env (unpack-arg-data vars) args env))
                     (eopl:error 'apply-proc "Incorrect number of arguments passed to procedure"))]
             [var-lambda-proc (vars bodies env)
                 (let* ([numargs (- (length vars) 1)]
                       [rest (del-first-n args numargs)])
                     (eval-bodies bodies (extend-env vars (cons rest args) env)))]
             [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
+
+(define (unpack-arg-data vars)
+    (if (null? vars)
+        '()
+        (cons (cases arg (car vars)
+            [sym-arg (id) id]
+            [ref-arg (id) id])
+            (unpack-arg-data (cdr vars)))))
 
 (define (del-first-n lst n)
     (if (zero? n)

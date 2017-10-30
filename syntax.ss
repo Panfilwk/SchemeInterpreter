@@ -64,7 +64,7 @@
             (syntax-expand
                 (letrec-exp
                     (list name)
-                    (list (lambda-exp vars '() func))
+                    (list (lambda-exp (map sym-arg vars) '() func))
                     (list (app-exp (var-exp name) vals))))]
         [def-exp (var val)
             (def-exp var (syntax-expand val))]
