@@ -39,3 +39,31 @@
         (if (box? ref)
             (unbox ref)
             ref)))
+
+(define (addr-env-ref env addr)
+    (cases address addr
+        [free-addr (id)
+            (apply-env-ref global-env id
+                identity-proc
+                (lambda () (eopl:error 'addr-env-ref "Could not find free variable in global env: ~s" id)))]
+        [bound-addr (depth pos)
+            (addr-lookup env depth pos)]))
+
+(define (addr-lookup env depth pos)
+    (if (= depth 0)
+        (cases environment env
+            [empty-env-record ()
+                (eopl:error 'addr-lookup "Addr out of env depth")]
+            [extended-env-record (syms vals env)
+                (list-ref vals pos)])
+        (cases environment env
+            [empty-env-record ()
+                (eopl:error 'addr-lookup "Addr out of env depth")]
+            [extended-env-record (syms vals env)
+                (addr-lookup env (- depth 1) pos)])))
+
+(define (addr-env env addr)
+    (let ([ref (addr-env-ref env addr)])
+        (if (box? ref)
+            (unbox ref)
+            ref)))

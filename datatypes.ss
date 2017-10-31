@@ -16,7 +16,7 @@
         (then expression?)
         (other expression?)]
     [set!-exp
-        (var symbol?)
+        (var (lambda (x) (or (symbol? x) (expression? x))))
         (val expression?)]
     [lambda-exp
         (args (list-of symbol?))

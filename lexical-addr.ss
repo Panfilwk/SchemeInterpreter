@@ -10,7 +10,7 @@
                 (lexical-addr then scope-list)
                 (lexical-addr other scope-list))]
         [set!-exp (var val)
-            (set!-exp (lexical-addr var scope-list) (lexical-addr val scope-list))]
+            (set!-exp (lexical-addr (var-exp var) scope-list) (lexical-addr val scope-list))]
         [lambda-exp (args vargs bodies)
             (lambda-exp
                 args
@@ -42,7 +42,7 @@
                 (lexical-addr val scope-list))]
         [begin-exp (bodies)
             (begin-exp
-                (map (lambda (body) lexical-addr body scope-list) bodies))]
+                (map (lambda (body) (lexical-addr body scope-list)) bodies))]
         [else (eopl:error 'lexical-addr "Unable to lexically address expression ~s" exp)]))
 
 (define (generate-address var scope-list)

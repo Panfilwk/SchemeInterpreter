@@ -26,6 +26,7 @@
                             identity-proc
                             (lambda ()
                                 (eopl:error 'apply-env "variable not found in environment: ~s" id)))))] 
+            [addr-exp (id) (addr-env env id)]
             [app-exp (rator rands)
                 (let ([proc-value (eval-exp rator env)]
                       [args (eval-rands rands env)])
@@ -54,11 +55,10 @@
                             (eval-exp (case-exp test (cdr vals) (cdr bodies)) env)]))]
             [set!-exp (var val)
                 (set-box!
-                    (apply-env-ref env var
-                        identity-proc
-                        (lambda () (apply-env-ref global-env var
-                            identity-proc
-                            (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))))
+                    (addr-env-ref env
+                        (cases expression var
+                            [addr-exp (id) id]
+                            [else (eopl:error 'eval-exp "Non-address passed to set!: ~s" var)]))
                     (eval-exp val env))]
             [begin-exp (bodies)
                 (eval-bodies bodies env)]
@@ -194,10 +194,10 @@
     (lambda ()
         (display "--> ")
         ;; notice that we don't save changes to the environment...
-        (let ([answer (top-level-eval (syntax-expand (parse-exp (read))))])
+        (let ([answer (top-level-eval (lexical-addr (syntax-expand (parse-exp (read))) '()))])
             ;; TODO: are there answers that should display differently?
             (eopl:pretty-print answer) (newline)
             (rep))))  ; tail-recursive, so stack doesn't grow.
 
 (define eval-one-exp
-    (lambda (x) (top-level-eval (syntax-expand (parse-exp x)))))
+    (lambda (x) (top-level-eval (lexical-addr (syntax-expand (parse-exp x)) '()))))
