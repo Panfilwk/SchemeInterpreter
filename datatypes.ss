@@ -95,3 +95,10 @@
         (args (list-of symbol?))
         (bodies (list-of expression?))
         (env environment?)])
+
+(define-datatype address address?
+    [free-addr
+        (id symbol?)]
+    [addr-exp
+        (depth number?)
+        (pos number?)])
