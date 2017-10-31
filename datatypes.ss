@@ -3,6 +3,8 @@
 (define-datatype expression expression?
     [var-exp
         (id symbol?)]
+    [addr-exp
+        (id address?)]
     [lit-exp
         (id lit-format?)]
     [and-exp
@@ -99,6 +101,6 @@
 (define-datatype address address?
     [free-addr
         (id symbol?)]
-    [addr-exp
+    [bound-addr
         (depth number?)
         (pos number?)])

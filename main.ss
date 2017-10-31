@@ -11,6 +11,7 @@
     (load "parse.ss")
     (load "env.ss")
     (load "syntax.ss")
+    (load "lexical-addr.ss")
     (load "interpreter.ss")))
 
 (load-all)

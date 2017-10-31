@@ -1,7 +1,7 @@
 (define (lexical-addr exp scope-list)
     (cases expression exp
         [var-exp (id)
-            (generate-address (var-exp id) scope-list)]
+            (addr-exp (generate-address id scope-list))]
         [lit-exp (id)
             (lit-exp id)]
         [if-exp (test then other)
@@ -14,7 +14,7 @@
         [lambda-exp (args vargs bodies)
             (lambda-exp
                 args
-                vars
+                vargs
                 (if (null? vargs)
                     (map (lambda (body) (lexical-addr body (cons args scope-list))) bodies)
                     (map (lambda (body) (lexical-addr body (cons (cons vargs args) scope-list))) bodies)))]
@@ -44,3 +44,11 @@
             (begin-exp
                 (map (lambda (body) lexical-addr body scope-list) bodies))]
         [else (eopl:error 'lexical-addr "Unable to lexically address expression ~s" exp)]))
+
+(define (generate-address var scope-list)
+    (let helper ([scope-list scope-list] [depth 0] [pos 0])
+        (cond
+            [(null? scope-list) (free-addr var)]
+            [(null? (car scope-list)) (helper (cdr scope-list) (+ depth 1) 0)]
+            [(eq? var (caar scope-list)) (bound-addr depth pos)]
+            [else (helper (cons (cdar scope-list) (cdr scope-list)) depth (+ pos 1))])))
