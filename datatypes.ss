@@ -94,4 +94,6 @@
     [var-lambda-proc
         (args (list-of symbol?))
         (bodies (list-of expression?))
-        (env environment?)])
+        (env environment?)]
+    [call/cc-proc
+        (k cont?)])

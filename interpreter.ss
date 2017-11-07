@@ -2,10 +2,10 @@
 
 (define (top-level-eval form k)
     (cond 
-        [(definition? form) (eval-def form)]
+        [(definition? form) (eval-def form k)]
         [(begin? form) 
         (cases expression form
-            [begin-exp (forms) (eval-forms forms)]
+            [begin-exp (forms) (eval-forms forms k)]
             [else (eopl:error 'top-level-eval "To begin or not to begin, that is the question")])]
         [(expression? form) (eval-exp form (empty-env) k)]
         [else (eopl:error 'top-level-eval "Invalid top-level statement: ~s" form)]))
@@ -50,15 +50,10 @@
             [case-exp (test vals bodies)
                 (eval-exp test env (case-k vals bodies test env k))]
             [set!-exp (var val)
-                (set-box!
-                    (apply-env-ref env var
-                        identity-proc
-                        (lambda () (apply-env-ref global-env var
-                            identity-proc
-                            (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))))
-                    (eval-exp val env))]
+                (eval-exp val env
+                    (set!-k var env k))]
             [begin-exp (bodies)
-                (eval-bodies bodies env)]
+                (eval-bodies bodies env k)]
             [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
 (define (identity-proc x) x)
@@ -75,34 +70,31 @@
       (eval-exp (car bodies) env k)
       (eval-exp (car bodies) env (bodies-k (cdr bodies) env k))))
 
-(define (eval-forms forms)
+(define (eval-forms forms k)
   (if (null? (cdr forms))
-      (top-level-eval (car forms))
-      (begin (top-level-eval (car forms)) (eval-forms (cdr forms)))))
+      (top-level-eval (car forms) k)
+      (begin (top-level-eval (car forms) k) (eval-forms (cdr forms) k))))
 
 ;  Apply a procedure to its arguments.
 ;  At this point, we only have primitive procedures.  
 ;  User-defined procedures will be added later.
 
-(define apply-proc
-    (lambda (proc-value args k)
-        (cases proc-val proc-value
-            [prim-proc (op) (apply-prim-proc op args k)]
-            [lambda-proc (vars bodies env)
-                (eval-bodies bodies (extend-env vars args env) k)]
-            [var-lambda-proc (vars bodies env)
-                (let* ([numargs (- (length vars) 1)]
-                      [rest (del-first-n args numargs)])
-                    (eval-bodies bodies (extend-env vars (cons rest args) env)))]
-            [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)])))
+(define (apply-proc proc-value args k)
+    (cases proc-val proc-value
+        [prim-proc (op) (apply-prim-proc op args k)]
+        [lambda-proc (vars bodies env)
+            (eval-bodies bodies (extend-env vars args env) k)]
+        [var-lambda-proc (vars bodies env)
+            (let* ([numargs (- (length vars) 1)]
+                   [rest (list-tail args numargs)])
+                (eval-bodies bodies (extend-env vars (cons rest args) env) k))]
+        [call/cc-proc (k) (apply-k k (car args))]
+        [else (error 'apply-proc "Attempt to apply bad procedure: ~s" proc-value)]))
 
-(define (del-first-n lst n)
-    (if (zero? n)
-        lst
-        (del-first-n (cdr lst) (- n 1))))
 
-(define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar
-    not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >= assq
+
+(define *prim-proc-names* '(+ - * / add1 sub1 zero? cons list length car cdr cadr cddr cdar caar cadar display
+    not null? eq? equal? atom? list? pair? procedure? vector? number? symbol? = < <= > >= assq call/cc newline exit-list
     list->vector vector->list vector vector-ref set-car! set-cdr! vector-set! apply map void quotient append eqv? list-tail))
 
 (define (make-init-env)         ; for now, our initial global environment only contains 
@@ -124,6 +116,8 @@
 (case prim-proc
     [(map) (map-cps (lambda (x k) (apply-proc (1st args) (list x) k)) (2nd args) k)]
     [(apply) (apply-proc (1st args) (2nd args) k)]
+    [(call/cc) (apply-proc (1st args) (list (call/cc-proc k)) k)]
+    [(exit-list) (apply-proc (call/cc-proc (init-k)) (list args) k)]
         [else
             (apply-k
                 k
@@ -175,6 +169,8 @@
                     [(eqv?) (eqv? (1st args) (2nd args))]
                     [(list-tail) (apply list-tail args)]
                     [(assq) (assq (1st args) (2nd args))]
+                    [(display) (display (1st args))]
+                    [(newline) (newline)]
                     [else (error 'apply-prim-proc 
                         "Bad primitive procedure name: ~s" 
                         prim-op)]))]))
@@ -187,11 +183,11 @@
             (map-head-k proc (cdr lst) k))))
 
 
-(define (eval-def def)
+(define (eval-def def k)
     (cases expression def
         [def-exp (var val) 
             (set! global-env 
-                (extend-env (list var) (list (eval-exp val (empty-env))) global-env))]
+                (extend-env (list var) (list (eval-exp val (empty-env) k)) global-env))]
         [else (eopl:error 'eval-def "bad definition: ~s" def)]))
 
 (define rep      ; "read-eval-print" loop.
@@ -200,7 +196,10 @@
         ;; notice that we don't save changes to the environment...
         (let ([answer (top-level-eval (syntax-expand (parse-exp (read))) (init-k))])
             ;; TODO: are there answers that should display differently?
-            (eopl:pretty-print answer) (newline)
+            (cond
+                [(eq? (void) answer) (void)]
+                [(proc-val? answer) (begin (display "#<procedure>") (newline))]
+                [else (eopl:pretty-print answer) (newline)])
             (rep))))  ; tail-recursive, so stack doesn't grow.
 
 (define eval-one-exp

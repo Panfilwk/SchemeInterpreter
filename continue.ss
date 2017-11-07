@@ -37,9 +37,13 @@
         (env environment?)
         (k cont?))
     (case-k
-        (vals (list-of symbol?))
+        (vals list?)
         (bodies (list-of expression?))
         (test expression?)
+        (env environment?)
+        (k cont?))
+    (set!-k
+        (var symbol?)
         (env environment?)
         (k cont?))
     (init-k))
@@ -71,7 +75,8 @@
                 (eval-bodies
                     bodies
                     env
-                    (while-loop-k expr env k)))]
+                    (while-loop-k expr env k))
+                (apply-k k (void)))]
         [while-loop-k (expr env k)
             (eval-exp expr env k)]
         [case-k (vals bodies test env k)
@@ -81,4 +86,14 @@
                 [(member val (car vals))
                     (eval-exp (car bodies) env k)]
                 [else 
-                    (eval-exp (case-exp test (cdr vals) (cdr bodies)) env k)])]))
+                    (eval-exp (case-exp test (cdr vals) (cdr bodies)) env k)])]
+        [set!-k (var env k)
+            (apply-k
+                k
+                (set-box! 
+                    (apply-env-ref env var
+                        identity-proc
+                        (lambda () (apply-env-ref global-env var
+                            identity-proc
+                            (lambda () (eopl:error 'apply-env-ref "variable not found in environment: ~s" var)))))
+                    val))]))
